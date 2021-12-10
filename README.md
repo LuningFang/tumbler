@@ -2,7 +2,11 @@
 source code and scripts for Metal Powder Group to run tumbler tests
 
 ## Get a copy of Chrono and its submodules
-1. Clone chrono repo
+0. ssh into your account on Euler
+````sh
+ssh [account_name]@euler-login-2.wacc.wisc.edu
+````
+2. Clone chrono repo
 ````sh
 git clone https://github.com/projectchrono/chrono.git
 ````
