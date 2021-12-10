@@ -11,7 +11,7 @@ Paraview for visualize particles
 ````sh
 ssh [account_name]@euler-login-2.wacc.wisc.edu
 ````
-2. Clone chrono repo
+1. Clone chrono repo
 ````sh
 git clone https://github.com/projectchrono/chrono.git
 ````
