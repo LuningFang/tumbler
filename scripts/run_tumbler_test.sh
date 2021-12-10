@@ -2,8 +2,8 @@
 #SBATCH --gres=gpu:1
 #SBATCH --time=3-0:0:0
 #SBATCH --partition=research
-#SBATCH -o OUTPUT/tumbler-%A_%a.out
-#SBATCH -e OUTPUT/tumber-%A_%a.err
+#SBATCH -o tumbler-%A.out
+#SBATCH -e tumbler-%A.err
 ##SBATCH --account=sbel
 ##SBATCH --qos=sbel_owner
 ##SBATCH --qos=priority
@@ -11,7 +11,7 @@
 ##SBATCH --array=1-16
 module load nvidia/cuda/11.3.1
 
-drum_height=3
+drum_height=0.5
 drum_omega=10
 
 cd ../build
