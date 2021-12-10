@@ -42,7 +42,7 @@ it will take its sweet time, so be patient. Note that you do not need to modify 
 ````sh
 git clone https://github.com/LuningFang/tumbler.git
 ````
-Folder `source` has two programs, `test_GPU_tumbler_settling.cpp` is used to create a settled configuration of particles and `test_GPU_tumbler_spinning.cpp` is for rotating the tumbler. Folder `scripts` contains the script necessary for running the above two tests
+Folder `source` has two programs, `test_GPU_tumbler_settling.cpp` is used to create a settled configuration of particles and `test_GPU_tumbler_spinning.cpp` is for rotating the tumbler. Folder `scripts` contains the script necessary for running the above two tests  
 2. build the tests, create the build folder
 ````sh
 cd tumbler
