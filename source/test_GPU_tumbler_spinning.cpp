@@ -289,8 +289,8 @@ int main(int argc, char* argv[]) {
     //    string initial_points_filename =
     //    GetChronoDataFile("models/tumbler_caltech/tumbler_initial_positions_d_1mm_large_stepsize.csv");
     // string initial_points_filename = GetChronoDataFile("models/tumbler/tumbler_initial_positions_0.5mm.csv");
-    string initial_points_filename = "data/tumbler_initial_positions.csv";
-    // string initial_points_filename = "tumbler_initial_positions.csv";
+
+    std::string initial_points_filename = sprintf("data/tumbler_initial_positions_H_%.2fcm.csv", drum_height);
     loadParticlePosition(initial_points_filename, filler_points);
     std::cout << "loaded " << filler_points.size() << " particles for filling" << std::endl;
 

@@ -209,7 +209,7 @@ int main(int argc, char* argv[]) {
         currframe++;
     }
 
-    std::string initial_points_filename = "tumbler_initial_positions.csv";
+    std::string initial_points_filename = sprintf("data/tumbler_initial_positions_H_%.2fcm.csv", drum_height);
 
     std::cout << "write file " << initial_points_filename << std::endl;
 
