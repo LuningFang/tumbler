@@ -36,6 +36,13 @@ using namespace chrono;
 using namespace chrono::gpu;
 
 
+// powder group
+// drum height and diameter about 3 inches
+// first figure out how drum height influence the result
+double drum_diameter = 7.62;
+double drum_height = 7.62;
+
+
 void tokenizeCSVLine(std::ifstream& istream, std::vector<float>& data) {
     std::string line;
     std::getline(istream, line);  // load in current line
@@ -159,17 +166,26 @@ std::vector<int> findBoundaryLayerIndex(ChSystemGpu& gpu_sys, double cyl_radius,
 
 void ShowUsage(std::string name) {
     std::cout << "usage: " + name + " <drum rotation speed (rpm)> " << std::endl;
+    std::cout << "OR " + name + " <drum depth (cm)> "  +  " <drum rotation speed (rpm)> " << std::endl;
+    
 }
 
 int main(int argc, char* argv[]) {
-    if (argc != 2) {
+    double drum_omega_rpm;
+
+    if (argc != 2 && argc != 3) {
         ShowUsage(argv[0]);
         return 1;
     }
 
-    // unit cgs
-    double drum_diameter = 6;
-    double drum_height = 0.5;
+    if (argc == 2) {
+        drum_omega_rpm = std::atof(argv[1]);
+    }
+
+    if (argc == 3) {
+        drum_height = std::atof(argv[1]);
+        drum_omega_rpm = std::atof(argv[2]);
+    }
 
     // caltech test
     // double drum_diameter = 30;
@@ -186,13 +202,12 @@ int main(int argc, char* argv[]) {
     // double mu_s2s = 0.16;
     // double mu_s2w = 0.45;
 
-    double mu_s2s = 0.0f;
-    double mu_s2w = 0.0f;
+    double mu_s2s = 0.16f;
+    double mu_s2w = 0.45f;
 
     double rolling_fr_s2s = 0.09;
     double rolling_fr_s2w = 0.09;
 
-    double drum_omega_rpm = std::atof(argv[1]);
     //    double drum_omega_rpm = 5.4f;
     double drum_omega = drum_omega_rpm * 2.0f * CH_C_PI / 60.0f;  // drumming spinning rad/s
     // double drum_omega = 55.0f * 2.0f * CH_C_PI / 60.0f; // drumming spinning rad/s
@@ -202,7 +217,8 @@ int main(int argc, char* argv[]) {
     // double drum_omega = drum_omega_deg / 180.f * CH_C_PI; // drumming spinning rad/s
 
     double step_size = 1e-6;
-    double time_end = 0.5f;
+    // end time: two revolutions
+    double time_end = 120.0f/drum_omega_rpm;
     ChSystemGpu gpu_sys(sphere_radius, sphere_density, ChVector<float>(box_X, box_Y, box_Z));
 
     double grav_X = 0.0;
@@ -273,8 +289,8 @@ int main(int argc, char* argv[]) {
     //    string initial_points_filename =
     //    GetChronoDataFile("models/tumbler_caltech/tumbler_initial_positions_d_1mm_large_stepsize.csv");
     // string initial_points_filename = GetChronoDataFile("models/tumbler/tumbler_initial_positions_0.5mm.csv");
-    string initial_points_filename = "data/tumbler_initial_positions.csv";
-
+    // string initial_points_filename = "data/tumbler_initial_positions.csv";
+    string initial_points_filename = "tumbler_initial_positions.csv";
     loadParticlePosition(initial_points_filename, filler_points);
     std::cout << "loaded " << filler_points.size() << " particles for filling" << std::endl;
 
