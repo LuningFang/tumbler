@@ -12,7 +12,7 @@ project(tumbler)
 #--------------------------------------------------------------
 
 set(DEMOS
-				test_GPU_tumbler
+				test_GPU_tumbler_settling
         test_GPU_tumbler_spinning
 		)
 
@@ -53,13 +53,6 @@ include_directories(
     ${CHRONO_INCLUDE_DIRS}
     ${CMAKE_SOURCE_DIR}
 )
-
-#--------------------------------------------------------------
-# Append to the parent's list of DLLs
-#--------------------------------------------------------------
-
-list(APPEND ALL_DLLS "${CHRONO_DLLS}")
-set(ALL_DLLS "${ALL_DLLS}" PARENT_SCOPE)
 
 #--------------------------------------------------------------
 # Compilation flags

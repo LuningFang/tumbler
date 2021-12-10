@@ -39,8 +39,15 @@ using namespace chrono::gpu;
 // double drum_height = 1.6;
 
 // cecily test in paper
-double drum_diameter = 6;
-double drum_height = 0.5;
+// double drum_diameter = 6;
+// double drum_height = 0.5;
+
+// powder group
+// drum height and diameter about 3 inches
+// first figure out how drum height influence the result
+double drum_diameter = 7.62;
+double drum_height = 7.62;
+
 
 std::vector<ChVector<double>> generateBoundaryLayer(double cylinder_radius,
                                                    double sphere_diameter,
@@ -69,6 +76,15 @@ std::vector<ChVector<double>> generateBoundaryLayer(double cylinder_radius,
 }
 
 int main(int argc, char* argv[]) {
+
+    if (argc == 2){
+        drum_height = atof(argv[1]);
+    }
+
+    if (argc != 1 && argc != 2){
+        printf("incorrect input arguments. \n run ./test_GPU_tumbler_settling or pass the depth of the drum (cm).\n");
+    }
+
     double sphere_radius = 0.0265;
     double sphere_density = 2.5;
     double box_X = drum_diameter;
@@ -193,7 +209,7 @@ int main(int argc, char* argv[]) {
         currframe++;
     }
 
-    std::string initial_points_filename = "tumbler_initial_positions.csv";
+    std::string initial_points_filename = sprintf("data/tumbler_initial_positions_H_%.2fcm.csv", drum_height);
 
     std::cout << "write file " << initial_points_filename << std::endl;
 

@@ -17,3 +17,5 @@ drum_omega=10
 cd ../build
 ./test_GPU_tumbler_settling ${drum_height}
 ./test_GPU_tumbler_spinning ${drum_height} ${drum_omega}
+
+
