@@ -57,7 +57,7 @@ use cmake to generate the `Makefile`
 ````sh
 ccmake ../source/ .
 ````
-you need to link tumbler test to Chrono library, type `c` once for configure, then type `e` to exit screen, then in the field of `Chrono_DIR` type the following directory `srv/home/[YOUR_EULR_ACCOUNT_NAME]/chrono_build/cmake/`, type `c` twice until `g` shows up, press `g`  
+you need to link tumbler test to Chrono library, type `c` once for configure, then type `e` to exit screen, then in the field of `Chrono_DIR` type the following directory `srv/home/[YOUR_EULR_ACCOUNT_NAME]/build_chrono/cmake/`, type `c` twice until `g` shows up, press `g`  
 Now you can build
 ````sh
 make -j 64
