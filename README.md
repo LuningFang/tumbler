@@ -35,14 +35,14 @@ ccmake ../chrono . -DCUDA_HOST_COMPILER=$CU_CC
 ````
 make -j 64
 ````
-it will take its sweet time, so be patient. Note that you do not need to modify anything in `chrono` or `build_chrono` folders.
+it will take its sweet time, so be patient. Note that you do not need to modify anything in `chrono` or `build_chrono`  
 
 ## Get a copy of tumber test repo and compile the code 
 1. go to your home directory by typing `cd`, then clone tumbler test repo
 ````sh
 git clone https://github.com/LuningFang/tumbler.git
 ````
-Folder `source` has two programs, `test_GPU_tumbler_settling.cpp` is used to create a settled configuration of partiles and `test_GPU_tumbler_spinning.cpp` is for turning the tumbler. Folder `scripts` contains the script necessary for running the above two tests
+Folder `source` has two programs, `test_GPU_tumbler_settling.cpp` is used to create a settled configuration of particles and `test_GPU_tumbler_spinning.cpp` is for rotating the tumbler. Folder `scripts` contains the script necessary for running the above two tests
 2. build the tests, create the build folder
 ````sh
 cd tumbler
