@@ -11,6 +11,7 @@
 ##SBATCH --array=1-16
 module load nvidia/cuda/11.3.1
 
+## drum height in cm, omega in rpm
 drum_height=0.5
 drum_omega=10
 
