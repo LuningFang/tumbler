@@ -209,8 +209,9 @@ int main(int argc, char* argv[]) {
         currframe++;
     }
 
-    std::string initial_points_filename = sprintf("data/tumbler_initial_positions_H_%.2fcm.csv", drum_height);
 
+    char initial_points_filename[150];
+    sprintf(initial_points_filename, "data/tumbler_initial_positions_H_%.2fcm.csv", drum_height);
     std::cout << "write file " << initial_points_filename << std::endl;
 
     std::ofstream outstream(initial_points_filename, std::ios::out);
