@@ -1,6 +1,11 @@
 # tumbler
 source code and scripts for Metal Powder Group to run tumbler tests
 
+## Things to have ready on your own machine
+WinSCP for Windows user to download/edit files from the remote location
+
+Paraview for visualize particles
+
 ## Get a copy of Chrono and its submodules
 0. ssh into your account on Euler
 ````sh
@@ -62,3 +67,17 @@ Now you can build
 ````sh
 make -j 64
 ````
+## Submit job to run tumbler tests
+1. Go to the directory of scripts
+````sh
+cd ../scripts/
+````
+2. Submit `run_tumbler_test.sh` using the following command
+````sh
+sbatch run_tumbler_test.sh
+````
+To see where your job is and how long it has been running, you can type 
+````sh
+squeue -u [YOUR_EULER_ACCOUNT_NAME]
+````
+in the terminal. In `run_tumbler_test.sh` you can modify parameter `drum_height` and `drum_omega`, note that drum height is in centimeter and drum omega is in rpm. If your job runs successfully, you will see output named as `tumbler*.out` in the same folder. Each time step, csv files that contain the positions and velocity of the particles is created and written in the following folder: `/srv/home/fang/tumbler/build/DEMO_OUTPUT/tumbler_settling/` for settling phase and `/srv/home/fang/tumbler/build/DEMO_OUTPUT/tumbler_spinning/spinning_omega_XX_rpm/` for spinning phase at XX rpm. 
