@@ -76,8 +76,9 @@ cd ../scripts/
 ````sh
 sbatch run_tumbler_test.sh
 ````
-To see where your job is and how long it has been running, you can type 
+To see where your job is and how long it has been running, you can type the following command in the terminal, 
 ````sh
 squeue -u [YOUR_EULER_ACCOUNT_NAME]
 ````
-in the terminal. In `run_tumbler_test.sh` you can modify parameter `drum_height` and `drum_omega`, note that drum height is in centimeter and drum omega is in rpm. If your job runs successfully, you will see output named as `tumbler*.out` in the same folder. Each time step, csv files that contain the positions and velocity of the particles is created and written in the following folder: `/srv/home/fang/tumbler/build/DEMO_OUTPUT/tumbler_settling/` for settling phase and `/srv/home/fang/tumbler/build/DEMO_OUTPUT/tumbler_spinning/spinning_omega_XX_rpm/` for spinning phase at XX rpm. 
+3. In `run_tumbler_test.sh` you can modify parameter `drum_height` and `drum_omega`, note that drum height is in centimeter and drum omega is in rpm. If your job runs successfully, you will see an output file named as `tumbler*.out` in the same folder. Each time step, a csv file that contains the positions and absolute velocity of all the particles is created and written in the following folder 
+`/srv/home/fang/tumbler/build/DEMO_OUTPUT/tumbler_settling/` for settling phase, and   `/srv/home/fang/tumbler/build/DEMO_OUTPUT/tumbler_spinning/spinning_omega_XX_rpm/` for spinning phase at XX rpm. 
