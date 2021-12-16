@@ -90,3 +90,20 @@ squeue -u [YOUR_EULER_ACCOUNT_NAME]
 scp '[YOUR_EULER_ACCOUNT_NAME]@euler-login-2.wacc.wisc.edu:[directory-to-your-csv-files]/*` .
 ````
 2. Start Paraview for postprocessing, slides available
+
+## What to do when Luning modifies the code
+1. Go to the tumbler directory on your cluster, use command `pwd` to check if you are in the right place, my output look something like this `srv/home/fang/tumbler`
+2. Type the command to get updated source code
+````sh
+git pull
+````
+3. Rebuild the source code to get an updated executable. Go to the build directory (use `pwd` to check, mine looks like `/srv/home/fang/tumbler/build`), and type
+````sh
+make -j 64
+````
+Let Luning know if any of the above two steps don't work
+4. Switch to your script folder,
+````sh
+cd ../scripts
+````
+and run the script using `sbatch` command. 
