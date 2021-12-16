@@ -81,6 +81,11 @@ To see where your job is and how long it has been running, you can type the foll
 ````sh
 squeue -u [YOUR_EULER_ACCOUNT_NAME]
 ````
+For example
+````sh
+squeue -u fang
+````
+
 3. In `run_tumbler_test.sh` you can modify parameter `drum_height` and `drum_omega`, note that drum height is in centimeter and drum omega is in rpm. If your job runs successfully, you will see an output file named as `tumbler*.out` in the same folder. Each time step, a csv file that contains the positions and absolute velocity of all the particles is created and written in the following folder 
 `/srv/home/fang/tumbler/build/DEMO_OUTPUT/tumbler_settling/` for settling phase, and   `/srv/home/fang/tumbler/build/DEMO_OUTPUT/tumbler_spinning/spinning_omega_XX_rpm/` for spinning phase at XX rpm. 
 4. To modify `drum_height` and `drum_omega` in the script, Windows users can use WinSCP, Mac users can use `vim`, see [this link](https://www.youtube.com/watch?v=ggSyF1SVFr4) for a tutorial video.
@@ -96,6 +101,12 @@ For Mac user, in your terminal, go to any directory where you wish to keep the f
 ````sh
 scp '[YOUR_EULER_ACCOUNT_NAME]@euler-login-2.wacc.wisc.edu:[directory-to-your-csv-files]/*' .
 ````
+For example, 
+````sh
+scp 'fang@euler-login-2.wacc.wisc.edu:/srv/home/fang/tumbler/build/DEMO_OUTPUT/tumbler_spinning/spinning_omega_10_rpm/*' .
+````
+If the command works, you will be prompted with password.
+
 2. Start Paraview for postprocessing, slides available
 
 ## What to do when Luning modifies the code
