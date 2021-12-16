@@ -85,6 +85,8 @@ int main(int argc, char* argv[]) {
         printf("incorrect input arguments. \n run ./test_GPU_tumbler_settling or pass the depth of the drum (cm).\n");
     }
 
+		std::cout << "test a demo here.... " << std::endl;
+
     double sphere_radius = 0.0265;
     double sphere_density = 2.5;
     double box_X = drum_diameter;
