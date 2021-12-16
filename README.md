@@ -94,7 +94,7 @@ Username and password is your username and password for Euler.
 
 For Mac user, in your terminal, go to any directory where you wish to keep the files, type
 ````sh
-scp '[YOUR_EULER_ACCOUNT_NAME]@euler-login-2.wacc.wisc.edu:[directory-to-your-csv-files]/*` .
+scp '[YOUR_EULER_ACCOUNT_NAME]@euler-login-2.wacc.wisc.edu:[directory-to-your-csv-files]/*' .
 ````
 2. Start Paraview for postprocessing, slides available
 
