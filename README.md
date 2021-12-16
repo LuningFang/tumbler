@@ -101,7 +101,7 @@ git pull
 ````sh
 make -j 64
 ````
-Let Luning know if any of the above two steps don't work
+Let Luning know if any of the above two steps don't work  
 4. Switch to your script folder,
 ````sh
 cd ../scripts
