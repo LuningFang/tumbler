@@ -92,7 +92,7 @@ scp '[YOUR_EULER_ACCOUNT_NAME]@euler-login-2.wacc.wisc.edu:[directory-to-your-cs
 2. Start Paraview for postprocessing, slides available
 
 ## What to do when Luning modifies the code
-1. Go to the tumbler directory on your cluster, use command `pwd` to check if you are in the right place, my output look something like this `srv/home/fang/tumbler`
+1. Go to the tumbler directory on your cluster using `cd`, use command `pwd` to check if you are in the right place, my output look something like this `srv/home/fang/tumbler`
 2. Type the command to get updated source code
 ````sh
 git pull
