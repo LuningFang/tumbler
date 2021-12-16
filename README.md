@@ -32,6 +32,7 @@ cd
 mkdir build_chrono
 cd build_chrono
 ````
+Here are some 
 2. load modules needed for building Chrono::GPU
 ````sh
 module load nvidia/cuda/11.3.1.lua 
@@ -85,7 +86,13 @@ squeue -u [YOUR_EULER_ACCOUNT_NAME]
 4. To modify `drum_height` and `drum_omega` in the script, Windows users can use WinSCP, Mac users can use `vim`, see [this link](https://www.youtube.com/watch?v=ggSyF1SVFr4) for a tutorial video.
 
 ## Postprocessing
-1. After the simulation is done, you can download your output from Euler to local machine. Windows user can use WinSCP. For Mac user, in your terminal, go to any directory where you wish to keep the files, type
+1. After the simulation is done, you can download your output from Euler to local machine. 
+
+Windows user can use WinSCP.   
+Hostname is euler-login-2.wacc.wisc.edu. 
+Username and password is your username and password for Euler.   
+
+For Mac user, in your terminal, go to any directory where you wish to keep the files, type
 ````sh
 scp '[YOUR_EULER_ACCOUNT_NAME]@euler-login-2.wacc.wisc.edu:[directory-to-your-csv-files]/*` .
 ````
