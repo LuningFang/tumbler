@@ -29,6 +29,7 @@
 #include "chrono_gpu/utils/ChGpuVisualization.h"
 
 #include "chrono_thirdparty/filesystem/path.h"
+#include "chrono_thirdparty/cxxopts/ChCLI.h"
 
 
 using namespace chrono;
@@ -46,13 +47,24 @@ using namespace chrono::gpu;
 // drum height and diameter about 3 inches
 // first figure out how drum height influence the result
 double drum_diameter = 7.62;
-double drum_height = 7.62;
+
+// forward declaration of specs
+bool GetProblemSpecs(int argc,
+                     char** argv,
+                     double& drum_height,
+                     double& particle_radius,
+                     double& mu_s,
+                     double& mu_r,
+                     double& step_size,
+                     std::string& output_dir);
+// ============================================
+
 
 
 std::vector<ChVector<double>> generateBoundaryLayer(double cylinder_radius,
                                                    double sphere_diameter,
                                                    double cylinder_width) {
-    int numLayers = (int)(cylinder_width / sphere_diameter);
+    int numLayers = round(cylinder_width / sphere_diameter);
     int particles_per_layer = (int)(std::ceil(2 * CH_C_PI * cylinder_radius / sphere_diameter));
 
     double theta_interval = 2 * CH_C_PI / (double)particles_per_layer;
@@ -77,34 +89,35 @@ std::vector<ChVector<double>> generateBoundaryLayer(double cylinder_radius,
 
 int main(int argc, char* argv[]) {
 
-    if (argc == 2){
-        drum_height = atof(argv[1]);
-    }
-
-    if (argc != 1 && argc != 2){
-        printf("incorrect input arguments. \n run ./test_GPU_tumbler_settling or pass the depth of the drum (cm).\n");
-    }
-
-		std::cout << "test a demo here.... " << std::endl;
-
+    // Parse command line arguments
     double sphere_radius = 0.0265;
+    double drum_height = 0.5;
+    double mu_s = 0.16;
+    double mu_r = 0.09;
+    double step_size = 5e-6;
+    std::string output_dir = "";
+
+    if (!GetProblemSpecs(argc, argv, drum_height, sphere_radius, mu_s, mu_r, step_size, output_dir)){
+        std::cout << "Error parsing parameters. "  << std::endl;
+        return 1;
+    }
+
+
     double sphere_density = 2.5;
     double box_X = drum_diameter;
     double box_Y = drum_diameter;
     double box_Z = drum_height;
 
-    double mu_s2s = 0.16;
-    double mu_s2w = 0.45;
-    double rolling_fr_s2s = 0.09;
-    double rolling_fr_s2w = 0.09;
-
-    double step_size = 1e-6;
-    //    double step_size = 5e-6;
+    double mu_s2s = mu_s;
+    double mu_s2w = mu_s;
+    double rolling_fr_s2s = mu_r;
+    double rolling_fr_s2w = mu_r;
 
     double time_end = 0.6f;
-    //    double time_end = 0.01f;
 
-    double frame_step = 0.05;
+    double frame_step = 0.01;
+    std::cout << "radius: " << sphere_radius << std::endl;
+
     ChSystemGpu gpu_sys(sphere_radius, sphere_density, ChVector<float>(box_X, box_Y, box_Z));
 
     double grav_X = 0.0;
@@ -127,11 +140,6 @@ int main(int argc, char* argv[]) {
     gpu_sys.SetPoissonRatio_SPH(poisson_ratio);
     gpu_sys.SetPoissonRatio_WALL(poisson_ratio);
 
-
-    // gpu_sys.SetCohesionRatio(params.cohesion_ratio);
-    // gpu_sys.SetAdhesionRatio_SPH2MESH(params.adhesion_ratio_s2m);
-    // gpu_sys.SetAdhesionRatio_SPH2WALL(params.adhesion_ratio_s2w);
-
     gpu_sys.SetGravitationalAcceleration(ChVector<float>(grav_X, grav_Y, grav_Z));
 
     gpu_sys.SetFrictionMode(chrono::gpu::CHGPU_FRICTION_MODE::MULTI_STEP);
@@ -143,7 +151,9 @@ int main(int argc, char* argv[]) {
     gpu_sys.SetRollingCoeff_SPH2SPH(rolling_fr_s2s);
     gpu_sys.SetRollingCoeff_SPH2WALL(rolling_fr_s2w);
 
-    std::string out_dir = GetChronoOutputPath() + "tumbler_settling/";
+
+    // create directory
+    std::string out_dir = GetChronoOutputPath() + output_dir;
     filesystem::create_directory(filesystem::path(out_dir));
     std::cout << "Successfully creating directory " << out_dir << std::endl;
 
@@ -195,26 +205,27 @@ int main(int argc, char* argv[]) {
     gpu_sys.Initialize();
 
     float curr_time = 0.0f;
-    int currframe = 0;
 
+    int currframe = 0;
     char filename[100];
     ChVector<float> velocity;
     while (curr_time < time_end) {
+
+//        suppress writing settling data to speed up
+        // sprintf(filename, "%s/step%04d.csv", out_dir.c_str(), currframe);
+        // gpu_sys.WriteParticleFile(std::string(filename));
+        // currframe++;
+        std::cout << "settling phase: "  << curr_time << " sec" << std::endl;
+
         gpu_sys.AdvanceSimulation(frame_step);
 
-        sprintf(filename, "%s/step%04d.csv", out_dir.c_str(), currframe);
-        gpu_sys.WriteParticleFile(std::string(filename));
-
         curr_time += frame_step;
-        std::cout << curr_time << std::endl;
-
-        currframe++;
     }
 
 
-    char initial_points_filename[150];
-    sprintf(initial_points_filename, "data/tumbler_initial_positions_H_%.2fcm.csv", drum_height);
-    std::cout << "write file " << initial_points_filename << std::endl;
+    char initial_points_filename[300];
+    sprintf(initial_points_filename, "%s/settled.csv", out_dir.c_str());
+    std::cout << "write settled particle file " << initial_points_filename << std::endl;
 
     std::ofstream outstream(initial_points_filename, std::ios::out);
     outstream << "x, y, z" << std::endl;
@@ -232,4 +243,37 @@ int main(int argc, char* argv[]) {
     outstream.close();
 
     return 0;
+}
+
+
+
+bool GetProblemSpecs(int argc,
+                     char** argv,
+                     double& drum_height,
+                     double& particle_radius,
+                     double& mu_s,
+                     double& mu_r,
+                     double& step_size,
+                     std::string& output_dir){
+
+    ChCLI cli(argv[0], "Tumbler test - Settling phase");
+    cli.AddOption<double>("Experiment", "drum_height", "height of the tumbler [cm]", std::to_string(drum_height));
+    cli.AddOption<double>("Experiment", "particle_radius", "particle radius [cm]", std::to_string(particle_radius));
+    cli.AddOption<double>("Simulation", "mu_s", "sliding friction coefficient", std::to_string(mu_s));
+    cli.AddOption<double>("Simulation", "mu_r", "rolling friction coefficient", std::to_string(mu_r));
+    cli.AddOption<double>("Simulation", "step_size", "simulation step size ", std::to_string(step_size));
+    cli.AddOption<std::string>("Output", "output_directory", "output directory name", output_dir);
+
+    if (!cli.Parse(argc, argv)) {
+        return false;
+    }
+
+    drum_height = cli.GetAsType<double>("drum_height");
+    particle_radius = cli.GetAsType<double>("particle_radius");
+    mu_s = cli.GetAsType<double>("mu_s");
+    mu_r = cli.GetAsType<double>("mu_r");
+    step_size = cli.GetAsType<double>("step_size");
+    output_dir = cli.GetAsType<std::string>("output_directory");
+
+    return true;
 }
