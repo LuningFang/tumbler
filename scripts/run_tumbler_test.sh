@@ -12,11 +12,24 @@
 module load nvidia/cuda/11.3.1
 
 ## drum height in cm, omega in rpm
-drum_height=0.5
-drum_omega=10
+drum_height=0.3
+drum_omega=15
 
 cd ../build
-./test_GPU_tumbler_settling ${drum_height}
-./test_GPU_tumbler_spinning ${drum_height} ${drum_omega}
 
+./test_GPU_tumbler_settling \
+--particle_radius="0.05" \
+--output_directory="some_test" \
+--mu_r="0.1" \
+--mu_s="0.3" \
+--step_size="0.000005" \
+--drum_height=${drum_height}
 
+ ./test_GPU_tumbler_spinning \
+ --particle_radius="0.05" \
+ --output_directory="some_test" \
+ --mu_r="0.1" \
+ --mu_s="0.3" \
+ --step_size="0.000005" \
+ --drum_height="0.3" \
+ --drum_speed=${drum_omega}
