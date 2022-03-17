@@ -109,7 +109,7 @@ int main(int argc, char* argv[]) {
     double box_Z = drum_height;
 
     double mu_s2s = mu_s;
-    double mu_s2w = mu_s;
+    double mu_s2w = 3*mu_s;  // cecily's test use 0.16 and 0.45 for s-s and s-w contact
     double rolling_fr_s2s = mu_r;
     double rolling_fr_s2w = mu_r;
 

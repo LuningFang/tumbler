@@ -31,6 +31,8 @@
 #include "chrono_gpu/utils/ChGpuVisualization.h"
 
 #include "chrono_thirdparty/filesystem/path.h"
+#include "chrono_thirdparty/cxxopts/ChCLI.h"
+
 
 using namespace chrono;
 using namespace chrono::gpu;
@@ -40,8 +42,18 @@ using namespace chrono::gpu;
 // drum height and diameter about 3 inches
 // first figure out how drum height influence the result
 double drum_diameter = 7.62;
-double drum_height = 7.62;
 
+// forward declaration of specs
+bool GetProblemSpecs(int argc,
+                     char** argv,
+                     double& drum_height,
+                     double& particle_radius,
+                     double& mu_s,
+                     double& mu_r,
+                     double& step_size,
+                     std::string& output_dir,
+                     double& drum_speed);
+// ============================================
 
 void tokenizeCSVLine(std::ifstream& istream, std::vector<float>& data) {
     std::string line;
@@ -76,7 +88,7 @@ void loadParticlePosition(std::string infile, std::vector<ChVector<float>> &sphe
 std::vector<ChVector<float>> generateBoundaryLayer(double cylinder_radius,
                                                    double sphere_diameter,
                                                    double cylinder_width) {
-    int numLayers = (int)(cylinder_width / sphere_diameter);
+    int numLayers = round(cylinder_width / sphere_diameter);
     int particles_per_layer = (int)(std::ceil(2 * CH_C_PI * cylinder_radius / sphere_diameter));
 
     double theta_interval = 2 * CH_C_PI / (double)particles_per_layer;
@@ -130,7 +142,8 @@ void updateBoundaryLayerPosition(double cyl_radius,
 void updateBoundaryLayerVelocity(double cyl_radius, std::vector<int> boundary_idx, double omega, ChSystemGpu& gpu_sys) {
     int index;
     ChVector<float> position;
-    ChVector<float> velocity;
+    ChVector<float> velocity;double drum_height = 7.62;
+
     double sin_theta, cos_theta;
     double vx, vy;
     for (int i = 0; i < boundary_idx.size(); i++) {
@@ -164,35 +177,26 @@ std::vector<int> findBoundaryLayerIndex(ChSystemGpu& gpu_sys, double cyl_radius,
     return boundary_idx;
 }
 
-void ShowUsage(std::string name) {
-    std::cout << "usage: " + name + " <drum rotation speed (rpm)> " << std::endl;
-    std::cout << "OR " + name + " <drum depth (cm)> "  +  " <drum rotation speed (rpm)> " << std::endl;
-    
-}
-
 int main(int argc, char* argv[]) {
-    double drum_omega_rpm;
 
-    if (argc != 2 && argc != 3) {
-        ShowUsage(argv[0]);
+    // Parse command line arguments
+    double sphere_radius = 0.0265;
+    double drum_height = 0.5;
+    double mu_s = 0.16;
+    double mu_r = 0.09;
+    double step_size = 5e-6;
+    std::string output_dir = "test";
+    double drum_omega_rpm = 10;
+
+    if (!GetProblemSpecs(argc, argv, drum_height, sphere_radius, mu_s, mu_r, step_size, output_dir, drum_omega_rpm)){
+        std::cout << "Error parsing parameters. "  << std::endl;
         return 1;
-    }
-
-    if (argc == 2) {
-        drum_omega_rpm = std::atof(argv[1]);
-    }
-
-    if (argc == 3) {
-        drum_height = std::atof(argv[1]);
-        drum_omega_rpm = std::atof(argv[2]);
     }
 
     // caltech test
     // double drum_diameter = 30;
     // double drum_height = 1.6;
 
-    // double sphere_radius = 0.05;
-    double sphere_radius = 0.0265;
     double sphere_density = 2.5;
 
     double box_X = drum_diameter;
@@ -202,22 +206,14 @@ int main(int argc, char* argv[]) {
     // double mu_s2s = 0.16;
     // double mu_s2w = 0.45;
 
-    double mu_s2s = 0.16f;
-    double mu_s2w = 0.45f;
+    double mu_s2s = mu_s;
+    double mu_s2w = 3*mu_s;
 
-    double rolling_fr_s2s = 0.09;
-    double rolling_fr_s2w = 0.09;
+    double rolling_fr_s2s = mu_r;
+    double rolling_fr_s2w = mu_r;
 
-    //    double drum_omega_rpm = 5.4f;
     double drum_omega = drum_omega_rpm * 2.0f * CH_C_PI / 60.0f;  // drumming spinning rad/s
-    // double drum_omega = 55.0f * 2.0f * CH_C_PI / 60.0f; // drumming spinning rad/s
-    // double drum_omega = 212.0f * 2.0f * CH_C_PI / 60.0f; // drumming spinning rad/s
 
-    // double drum_omega_deg = 2.0f;
-    // double drum_omega = drum_omega_deg / 180.f * CH_C_PI; // drumming spinning rad/s
-
-    double step_size = 1e-6;
-    // end time: two revolutions
     double time_end = 120.0f/drum_omega_rpm;
     ChSystemGpu gpu_sys(sphere_radius, sphere_density, ChVector<float>(box_X, box_Y, box_Z));
 
@@ -241,10 +237,6 @@ int main(int argc, char* argv[]) {
     gpu_sys.SetPoissonRatio_SPH(poisson_ratio);
     gpu_sys.SetPoissonRatio_WALL(poisson_ratio);
 
-    // gpu_sys.SetCohesionRatio(params.cohesion_ratio);
-    // gpu_sys.SetAdhesionRatio_SPH2MESH(params.adhesion_ratio_s2m);
-    // gpu_sys.SetAdhesionRatio_SPH2WALL(params.adhesion_ratio_s2w);
-
     gpu_sys.SetGravitationalAcceleration(ChVector<float>(grav_X, grav_Y, grav_Z));
 
     gpu_sys.SetFrictionMode(chrono::gpu::CHGPU_FRICTION_MODE::MULTI_STEP);
@@ -256,14 +248,19 @@ int main(int argc, char* argv[]) {
     gpu_sys.SetRollingCoeff_SPH2SPH(rolling_fr_s2s);
     gpu_sys.SetRollingCoeff_SPH2WALL(rolling_fr_s2w);
 
-    std::string out_dir = GetChronoOutputPath() + "tumbler_spinning/";
-    filesystem::create_directory(filesystem::path(out_dir));
 
-    char output_dir[100];
-    sprintf(output_dir, "spinning_omega_%d_rpm", (int)drum_omega_rpm);
+    // check to see if output directory exist
+    std::string out_dir = GetChronoOutputPath() + output_dir;
+    filesystem::path output_folder(out_dir);
+    if (!output_folder.exists()){
+        std::cout << "ERROR: output folder " << output_dir << " does not exist. " << std::endl; 
+        return 1;
+    }
 
-    out_dir = out_dir + output_dir;
-    filesystem::create_directory(filesystem::path(out_dir));
+    std::string subfolder = out_dir + "/omega_" + std::to_string((int)drum_omega_rpm) + "_rpm";
+    filesystem::create_directory(filesystem::path(subfolder));
+    std::cout << "Created folder " << subfolder.c_str() << std::endl;
+
 
     gpu_sys.SetTimeIntegrator(CHGPU_TIME_INTEGRATOR::CENTERED_DIFFERENCE);
     gpu_sys.SetFixedStepSize(step_size);
@@ -286,14 +283,14 @@ int main(int argc, char* argv[]) {
 
     std::vector<ChVector<float>> filler_points;
 
-    //    string initial_points_filename =
-    //    GetChronoDataFile("models/tumbler_caltech/tumbler_initial_positions_d_1mm_large_stepsize.csv");
-    // string initial_points_filename = GetChronoDataFile("models/tumbler/tumbler_initial_positions_0.5mm.csv");
-
-    char initial_points_filename[150];
-    sprintf(initial_points_filename, "data/tumbler_initial_positions_H_%.2fcm.csv", drum_height);
+    std::string initial_points_filename = out_dir + "/settled.csv";
     loadParticlePosition(initial_points_filename, filler_points);
     std::cout << "loaded " << filler_points.size() << " particles for filling" << std::endl;
+    if (filler_points.size() == 0){
+        std::cout << "ERROR: No particle loaded." << std::endl;
+        return 1;
+    }
+
 
     std::vector<ChVector<float>> boundary_points =
         generateBoundaryLayer(drum_diameter / 2.0f, sphere_radius * 2.0f, drum_height);
@@ -321,32 +318,54 @@ int main(int argc, char* argv[]) {
     ChVector<float> velocity;
 
     // write initial position
-    sprintf(filename, "%s/step%06d", out_dir.c_str(), currframe);
+    sprintf(filename, "%s/step%06d.csv", subfolder.c_str(), currframe);
     gpu_sys.WriteParticleFile(std::string(filename));
 
     // int steps_per_frame = 50000;
     //    int steps_per_frame = 2000; // how often to output positions
-    int steps_per_frame = 100;  // how often to output positions
+    int steps_per_frame = 2500;  // how often to output positions
 
     double frame_step = 1e-4;  // how often to update the boundary
+    std::cout << "boundary particles updated at every " << frame_step << " seconds" << std::endl;
 
-    std::cout << "frame step " << frame_step << " seconds" << std::endl;
-    // std::cout << "boundary particles updated at every 0.1 sec" << std::endl;
+    
 
+
+    // write specs before simulation 
+
+
+    if (!GetProblemSpecs(argc, argv, drum_height, sphere_radius, mu_s, mu_r, step_size, output_dir, drum_omega_rpm)){
+        std::cout << "Error parsing parameters. "  << std::endl;
+        return 1;
+    }
+
+    // Write file with stats for the settling phase
+    std::ofstream outf;
+    outf.open(subfolder + "/params.info", std::ios::out);
+    outf << "Number particles:             " << filler_points.size() << endl;
+    outf << "Particle radius (cm):         " << sphere_radius << endl;
+    outf << "Drum depth (cm):              " << drum_height << endl;
+    outf << "Sliding friction coefficient: " << mu_s << endl;
+    outf << "Rolling friction coefficient: " << mu_r << endl;
+    outf << "Drum rotation speed (rpm):    " << drum_omega_rpm << endl;
+    outf << "Simulation step size:         " << step_size << endl;
+
+    clock_t cpu_start_time = std::clock();
     while (curr_time < time_end) {
-        // clock_t start_time = std::clock();
         gpu_sys.AdvanceSimulation(frame_step);
-        // clock_t end_time = std::clock();
 
-        // std::cout << "cpu time: " << ((double)(end_time - start_time))/CLOCKS_PER_SEC << std::endl;
         updateBoundaryLayerPosition(drum_diameter / 2.0f - sphere_radius, boundary_idx, drum_omega, gpu_sys,
                                     frame_step);
 
         updateBoundaryLayerVelocity(drum_diameter / 2.0f - sphere_radius, boundary_idx, drum_omega, gpu_sys);
 
         if (currframe % steps_per_frame == 0) {
-            sprintf(filename, "%s/step%06d.csv", out_dir.c_str(), (int)(currframe / steps_per_frame) + 1);
-            gpu_sys.WriteParticleFile(std::string(filename));
+
+            // only write particle info during the last half revolution at 0.1 sec interval
+            if (curr_time > 0.75 * time_end){
+                sprintf(filename, "%s/step%06d.csv", subfolder.c_str(), (int)(currframe / steps_per_frame) + 1);
+                gpu_sys.WriteParticleFile(std::string(filename));
+            }
 
             std::cout << curr_time << std::endl;
         }
@@ -354,6 +373,45 @@ int main(int argc, char* argv[]) {
         curr_time += frame_step;
         currframe++;
     }
+    clock_t end_time = std::clock();
+    double computation_time = (end_time - cpu_start_time)/CLOCKS_PER_SEC;
+    outf << "Simulation end time:          " << computation_time << endl;
+
 
     return 0;
+}
+
+
+bool GetProblemSpecs(int argc,
+                     char** argv,
+                     double& drum_height,
+                     double& particle_radius,
+                     double& mu_s,
+                     double& mu_r,
+                     double& step_size,
+                     std::string& output_dir,
+                     double& drum_speed){
+    ChCLI cli(argv[0], "Tumbler test - Spinning phase");
+    cli.AddOption<double>("Experiment", "drum_height", "height of the tumbler [cm]", std::to_string(drum_height));
+    cli.AddOption<double>("Experiment", "particle_radius", "particle radius [cm]", std::to_string(particle_radius));
+    cli.AddOption<double>("Simulation", "mu_s", "sliding friction coefficient", std::to_string(mu_s));
+    cli.AddOption<double>("Simulation", "mu_r", "rolling friction coefficient", std::to_string(mu_r));
+    cli.AddOption<double>("Simulation", "step_size", "simulation step size ", std::to_string(step_size));
+    cli.AddOption<std::string>("Output", "output_directory", "output directory name", output_dir);
+    cli.AddOption<double>("Experiment", "drum_speed", "drum rotation speed [rpm]", std::to_string(particle_radius));
+
+    if (!cli.Parse(argc, argv)) {
+        return false;
+    }
+
+    drum_height = cli.GetAsType<double>("drum_height");
+    particle_radius = cli.GetAsType<double>("particle_radius");
+    mu_s = cli.GetAsType<double>("mu_s");
+    mu_r = cli.GetAsType<double>("mu_r");
+    step_size = cli.GetAsType<double>("step_size");
+    output_dir = cli.GetAsType<std::string>("output_directory");
+    drum_speed = cli.GetAsType<double>("drum_speed");
+
+    return true;
+
 }
