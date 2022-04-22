@@ -14,6 +14,7 @@ project(tumbler)
 set(DEMOS
 				test_GPU_tumbler_settling
         test_GPU_tumbler_spinning
+        test_GPU_nozzle
 		)
 
 #--------------------------------------------------------------
