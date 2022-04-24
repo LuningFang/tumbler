@@ -14,9 +14,12 @@
 // Chrono::Gpu simulation of material flowing out of a nozzle
 // =============================================================================
 
+#include <cmath>
 #include <iostream>
 #include <string>
-#include <cmath>
+#include <iomanip>
+#include <ctime>
+
 #include "chrono/core/ChGlobal.h"
 #include "chrono/utils/ChUtilsSamplers.h"
 
@@ -43,8 +46,8 @@ bool GetProblemSpecs(int argc,
 void setupContactModel(ChSystemGpu& gran_sys){
     float kn = 1e7;
     float kt = 1e7;
-    float gn = 5e4;
-    float gt = 5e4;
+    float gn = 1e7;
+    float gt = 5e6;
 
     // normal force model
     gran_sys.SetKn_SPH2SPH(kn);
@@ -106,11 +109,11 @@ int main(int argc, char* argv[]) {
     gran_sys.SetGravitationalAcceleration(ChVector<float>(0, 0, grav_Z));
     gran_sys.SetBDFixed(true);
 
-    ChVector<float> center_pt(0, 0, 0 - box_Z/3);
+    ChVector<float> center_pt(0, 0, 0);
 
     float cone_slope = tan(nozzle_angle_rad/2.0f);
     float cone_offset = aperture_diameter / 2.f / cone_slope;
-    float hmax = box_Z;
+    float hmax = box_Z/2;
     float hmin = center_pt.z() + cone_offset;
 
 
@@ -118,7 +121,7 @@ int main(int argc, char* argv[]) {
     std::vector<ChVector<float>> body_points;
 
     // padding in sampler
-    float fill_epsilon = 2.02f;
+    float fill_epsilon = 2.1f;
     // padding at top of fill
     float fill_gap = fill_epsilon*sphere_radius;
 
@@ -126,16 +129,14 @@ int main(int argc, char* argv[]) {
 
 
     // width we want to fill to
-    float fill_width = aperture_diameter/2 - sphere_radius;
-    // height that makes this width above the cone
-    float fill_height = fill_width;
+    float fill_width;
 
     // fill to top
     float fill_bottom = hmin + fill_gap;
-    // float fill_top = box_Z/6;
-    float fill_top = 0;
-
-    printf("width is %f, bot is %f, top is %f, height is %f\n", fill_width, fill_bottom, fill_top, fill_height);
+    // float fill_top = box_Z/6;   // for toy problem about 6k particles
+    float fill_top = box_Z * 0.4;   // for actual sims, about 91055 particles
+    float fill_height = fill_top - fill_bottom;
+    printf("width is %f, bot is %f, top is %f\n", fill_width, fill_bottom, fill_top);
     // fill box, layer by layer
     ChVector<> center(0, 0, fill_bottom);
     // shift up for bottom of box
@@ -143,16 +144,17 @@ int main(int argc, char* argv[]) {
 
     while (center.z() < fill_top) {
         float diff = center.z() - center_pt.z();
-        fill_width = diff * cone_slope - sphere_radius;
+        fill_width = diff * cone_slope - 2*sphere_radius;
         auto points = sampler.SampleCylinderZ(center, fill_width, 0);
         body_points.insert(body_points.end(), points.begin(), points.end());
+        std::cout << "created layer at z = " << center.z() << " cm" << std::endl; 
         center.z() += fill_epsilon * sphere_radius;
     }
 
     gran_sys.SetParticles(body_points);
 
     float sphere_mass =
-        (4.f / 3.f) * sphere_density * sphere_radius * sphere_radius * sphere_radius;
+        (4.f / 3.f) * sphere_density * sphere_radius * sphere_radius * sphere_radius * CH_C_PI;
     printf("%d spheres with total mass %f \n", body_points.size(), body_points.size() * sphere_mass);
 
     // set time integrator
@@ -164,7 +166,7 @@ int main(int argc, char* argv[]) {
 
 
     // Finalize settings and initialize for runtime
-    gran_sys.CreateBCConeZ(center_pt, cone_slope, hmax, hmin, false, false);
+    gran_sys.CreateBCConeZ(center_pt, tan(CH_C_PI/2.0 - nozzle_angle_rad/2.0f), hmax, hmin, false, false);
 
     float cyl_rad = fill_width + 8;
     printf("top of cone is at %f, cone tip is at %f, botoom of cone is %f\n", hmax, center_pt.z(), hmin);
@@ -172,12 +174,15 @@ int main(int argc, char* argv[]) {
     ChVector<float> plane_center(0, 0, hmin);
     ChVector<float> plane_normal(0, 0, 1);
 
-    printf("center is %f, %f, %f, plane center is is %f, %f, %f\n", center_pt.x(), center_pt.y(), center_pt.z(),
+    printf("center is %f, %f, %f, plane center is is %f, %f, %f\n", center_pt.x(), center_pt.y(), hmin,
            plane_center.x(), plane_center.y(), plane_center.z());
+
     size_t cone_plane_bc_id = gran_sys.CreateBCPlane(plane_center, plane_normal, false);
 
-    // put a plane at the bottom of the box to count forces
-    ChVector<float> box_bottom(0, 0, -box_Z / 2.f + 2.f);
+
+    size_t bottom_plate = gran_sys.CreateBCPlane(ChVector<float>(0,0, hmin - fill_height * 0.6), plane_normal, true);
+
+
     gran_sys.Initialize();
 
     // number of times to capture force data per second
@@ -186,33 +191,69 @@ int main(int argc, char* argv[]) {
     int captures_per_frame = 4;
 
     // assume we run for at least one frame
-    float frame_step = 1.0f / captures_per_second;
+    float frame_step = 0.005;
     float curr_time = 0;
-    int currcapture = 0;
     int currframe = 0;
 
     std::cout << "capture step is " << frame_step << std::endl;
 
-    float t_remove_plane = .5;
+    float t_remove_plane = .1;
     bool plane_active = false;
 
-    char filename[100];
+    char filename[200];
+    // print out original position
+    printf("rendering frame %u, curr time %f\n", currframe, curr_time);
+    sprintf(filename, "%s/step%06d.csv", output_dir.c_str(), currframe++);
+    gran_sys.WriteParticleFile(std::string(filename));
+
+    ChVector<float> reaction_forces;
+    float F_CGS_TO_SI = 1e-5;
+
+
+    // Write file with stats for the settling phase
+    std::ofstream outf;
+    outf.open(output_dir + "/info", std::ios::out);
+    outf << "Number particles:             " << body_points.size() << std::endl;
+    outf << "total mass (g):               " << body_points.size() * sphere_mass << std::endl;
+    outf << "Particle radius (cm):         " << sphere_radius << std::endl;
+    outf << "nozzle diameter (cm):         " << aperture_diameter << std::endl;
+    outf << "nozzle angle (deg):           " << nozzle_angle_deg << std::endl;
+    outf << "Sliding friction coefficient: " << mu_s << std::endl;
+    outf << "Rolling friction coefficient: " << mu_r << std::endl;
+    outf << "Simulation step size:         " << step_size << std::endl;
+    outf << "=================================" << std::endl;
+    outf << "frame num, time, discharge weight" << std::endl;
+
+    clock_t cpu_start_time = std::clock();
+
     // Run settling experiments
     while (curr_time < time_end) {
         if (!plane_active && curr_time > t_remove_plane) {
             gran_sys.DisableBCbyID(cone_plane_bc_id);
         }
         gran_sys.AdvanceSimulation(frame_step);
+
         curr_time += frame_step;
 
-        // if this frame is a render frame
-        if (currcapture % captures_per_frame == 0) {
-            printf("rendering frame %u, curr time %f\n", currframe, curr_time);
-            sprintf(filename, "%s/step%06d.csv", output_dir.c_str(), currframe++);
-            gran_sys.WriteParticleFile(std::string(filename));
+        bool success = gran_sys.GetBCReactionForces(bottom_plate, reaction_forces);
+        if (!success) {
+            printf("ERROR! Get contact forces for plane failed\n");
+        } else {
+            printf("rendering frame %u, curr time %f, plate force is %.13e N\n", currframe, curr_time, F_CGS_TO_SI * reaction_forces.z());
+            outf << currframe << ", " << curr_time << ", " << reaction_forces.z() << std::endl;
+
         }
-        currcapture++;
+        
+        sprintf(filename, "%s/step%06d.csv", output_dir.c_str(), currframe++);
+        gran_sys.WriteParticleFile(std::string(filename));
+
+
     }
+
+    clock_t end_time = std::clock();
+    double computation_time = (end_time - cpu_start_time)/CLOCKS_PER_SEC;
+    outf << "Simulation end time:          " << computation_time << std::endl;
+
 
     return 0;
 }
