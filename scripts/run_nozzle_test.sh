@@ -11,7 +11,7 @@
 ##SBATCH --array=1-16
 module load nvidia/cuda/11.3.1
 
-cd ../build
+cd ../new_build
 
 ./test_GPU_nozzle \
 --nozzle_diameter="0.1" \
