@@ -76,7 +76,7 @@ int main(int argc, char* argv[]) {
     float box_Y = 2;
     float box_Z = 2;
     float step_size = 1e-6;
-    float time_end = 3;
+    float time_end = 2;
     double mu_s = 0.15;
     double mu_r = 0.2;
 
